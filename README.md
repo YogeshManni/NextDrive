@@ -1,0 +1,2 @@
+# NextDrive
+ NextDrive is a modern web application designed to simplify cloud file management. Built using Next.js, Typescript and Tailwind NextDrive allows users to securely upload, store, and access their files with seamless integration to cloud services like Google Drive. With user-friendly authentication and an intuitive interface, NextDrive makes organizing and managing your files effortless and efficient. Perfect for professionals and students alike, NextDrive keeps your important documents just a click away.
