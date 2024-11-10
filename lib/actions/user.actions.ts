@@ -4,6 +4,7 @@ import { ID, Query } from "node-appwrite";
 import { createAdminClient } from "../appwrite";
 import { appwriteConfig } from "../appwrite/config";
 import { parseStringify } from "../utils";
+import { cookies } from "next/headers";
 
 const getUserByEmail = async (email: string) => {
   const { databases } = await createAdminClient();
@@ -21,7 +22,7 @@ const handleError = (error: unknown, message: string) => {
   throw new Error(message);
 };
 
-const sendEmailOTP = async ({ email }: { email: string }) => {
+export const sendEmailOTP = async (email: string) => {
   const { account } = await createAdminClient();
   try {
     const session = await account.createEmailToken(ID.unique(), email);
@@ -40,11 +41,10 @@ export const createAccount = async ({
 }) => {
   const existingUser = await getUserByEmail(email);
 
-  const accountId = await sendEmailOTP({ email });
+  const accountId = await sendEmailOTP(email);
   if (!accountId) throw new Error("Failed to send an OTP");
 
-  if (!existingUser) {`
-    `
+  if (!existingUser) {
     const { databases } = await createAdminClient();
     await databases.createDocument(
       appwriteConfig.databaseId,
@@ -56,10 +56,37 @@ export const createAccount = async ({
         email,
         avatar:
           "https://banner2.cleanpng.com/20180920/yko/kisspng-computer-icons-portable-network-graphics-avatar-ic-1713936211478.webp",
-        accountId,
+        accountid: accountId,
       }
     );
 
     return parseStringify({ accountId });
+  }
+};
+
+export const verifySecret = async ({
+  accountId,
+  password,
+}: {
+  accountId: string;
+  password: string;
+}) => {
+  try {
+    const { account } = await createAdminClient();
+
+    //create a session before login
+    const session = await account.createSession(accountId, password);
+
+    // set cookie for the session
+    (await cookies()).set("appwrite-session", session.secret, {
+      path: "/",
+      httpOnly: true,
+      sameSite: "strict",
+      secure: true,
+    });
+
+    return parseStringify({ session: session.$id });
+  } catch (error) {
+    handleError(error, "Failed to verify OTP");
   }
 };
